@@ -9,6 +9,7 @@ import { detectHardware, effectiveOptions, machineId } from './hardware';
 import { buildContextTree } from './context';
 import { rollback } from './checkpoints';
 import { mcpStatus, shutdownMcp, syncMcp } from './mcp';
+import { checkForUpdate, downloadUpdate, initUpdater, installUpdate, updateState } from './updater';
 
 let win: BrowserWindow | null = null;
 let models: ModelInfo[] = [];
@@ -155,6 +156,11 @@ const handlers: Record<string, (...a: any[]) => any> = {
   'log:reveal': (chatId: string) => (fs.existsSync(store.logPath(chatId)) ? shell.showItemInFolder(store.logPath(chatId)) : shell.openPath(store.logsDir())),
   // ---- MCP
   'mcp:get': () => ({ servers: store.getMcpServers(), status: mcpStatus() }),
+  // ---- version & updates
+  'app:info': () => ({ version: app.getVersion(), packaged: app.isPackaged, update: updateState() }),
+  'update:check': () => checkForUpdate(),
+  'update:download': () => downloadUpdate(),
+  'update:install': () => installUpdate(),
   'mcp:save': async (servers: McpServerConfig[], reconnectId?: string) => {
     store.setMcpServers(servers);
     await syncMcp(servers, reconnectId);
@@ -205,6 +211,9 @@ if (!app.requestSingleInstanceLock()) {
       return h(...args);
     });
     createWindow();
+    initUpdater((state) => send({ type: 'update', chatId: '', state }));
+    // Check GitHub for a newer release shortly after launch; failures stay silent (visible in Settings).
+    if (app.isPackaged) setTimeout(() => void checkForUpdate(), 4000);
     void ensureHardware().catch(() => {});
     void syncMcp(store.getMcpServers()).catch(() => {});
   });

@@ -1,7 +1,7 @@
 {
   "name": "pal-pal",
   "productName": "Pal Pal",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Pal Pal - a local-first desktop AI agent for Ollama and OpenRouter",
   "author": "Pal Pal",
   "license": "MIT",
@@ -13,11 +13,12 @@
     "start": "electron-vite preview",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "vitest run",
-    "dist": "electron-vite build && electron-builder --win nsis"
+    "dist": "electron-vite build && electron-builder --win nsis --publish never"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.32.2",
     "ajv": "^8.20.0",
+    "electron-updater": "^6.8.11",
     "jsonrepair": "^3.15.0",
     "zod": "^4.6.7"
   },
@@ -42,15 +43,41 @@
   "build": {
     "appId": "com.palpal.app",
     "productName": "Pal Pal",
-    "directories": { "output": "release" },
-    "files": ["out/**/*", "package.json"],
-    "win": { "target": [{ "target": "nsis", "arch": ["x64"] }] },
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "out/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
     "nsis": {
       "oneClick": false,
       "perMachine": false,
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
-      "shortcutName": "Pal Pal"
-    }
+      "shortcutName": "Pal Pal",
+      "artifactName": "Pal-Pal-Setup-${version}.${ext}"
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "jonathandwise",
+        "repo": "pal-pal"
+      }
+    ]
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jonathandwise/pal-pal.git"
   }
 }

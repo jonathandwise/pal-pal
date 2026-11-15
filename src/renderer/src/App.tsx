@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { AgentEvent, ApprovalRequest, Chat, ModelInfo, Msg, Settings, Topic } from '../../shared/types';
+import type { AgentEvent, ApprovalRequest, Chat, ModelInfo, Msg, Settings, Topic, UpdateState } from '../../shared/types';
 import { api, onEvent } from './api';
 import { ChatView } from './Chat';
 import { ContextPanel, LogPanel } from './Panels';
@@ -29,6 +29,11 @@ export function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [ollama, setOllama] = useState<any>({ running: false, loaded: [] });
+  const [update, setUpdate] = useState<UpdateState>({ status: 'idle', current: '' });
+  const [updateDismissed, setUpdateDismissed] = useState('');
+  useEffect(() => {
+    void api('app:info').then((i) => setUpdate({ ...i.update, current: i.version }));
+  }, []);
   const [ctxVersion, setCtxVersion] = useState(0);
   const activeRef = useRef<string | null>(null);
   activeRef.current = activeId;
@@ -132,6 +137,9 @@ export function App() {
             void reload();
             if (active) void api<Msg[]>('chats:messages', e.chatId).then((m) => activeRef.current === e.chatId && setMessages(m));
             break;
+          case 'update':
+            setUpdate(e.state);
+            break;
           case 'done':
             setRunning((r) => {
               const n = new Set(r);
@@ -191,6 +199,7 @@ export function App() {
         activeId={activeId}
         running={running}
         ollama={ollama}
+        version={update.current}
         onOpen={openChat}
         onNew={newChat}
         onPickFolder={pickFolder}
@@ -254,6 +263,9 @@ export function App() {
           toast={toast}
         />
       )}
+      {(update.status === 'available' || update.status === 'downloading' || update.status === 'ready') && updateDismissed !== update.latest && (
+        <UpdatePrompt update={update} onLater={() => setUpdateDismissed(update.latest || 'x')} busy={running.size > 0} />
+      )}
       <div className="toasts">
         {toasts.map((t) => (
           <div key={t.id} className={'toast' + (t.err ? ' err' : '')}>
@@ -273,6 +285,7 @@ function Sidebar(p: {
   activeId: string | null;
   running: Set<string>;
   ollama: any;
+  version: string;
   onOpen: (id: string) => void;
   onNew: (topicId: string | null) => void;
   onPickFolder: () => void;
@@ -417,7 +430,10 @@ function Sidebar(p: {
     <div className="sidebar">
       <div className="head">
         <div className="row">
-          <strong className="grow">Pal Pal</strong>
+          <strong>Pal Pal</strong>
+          <span className="grow muted small" title="Installed version">
+            {p.version ? 'v' + p.version : ''}
+          </span>
           <button className="ghost" title="Settings" onClick={p.onSettings}>
             ⚙
           </button>
@@ -552,6 +568,49 @@ function Sidebar(p: {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function UpdatePrompt({ update, onLater, busy }: { update: UpdateState; onLater: () => void; busy: boolean }) {
+  return (
+    <div className="overlay">
+      <div className="modal smallm">
+        <div className="mhead">A new version of Pal Pal is available</div>
+        <div className="pane">
+          <p style={{ marginTop: 0 }}>
+            Version <b>{update.latest}</b> is available. You have version <b>{update.current}</b>. Would you like to update now?
+          </p>
+          {update.notes && <pre style={{ whiteSpace: 'pre-wrap', maxHeight: 180, overflow: 'auto', background: 'var(--bg)', padding: 8, borderRadius: 6, fontSize: 12 }}>{update.notes}</pre>}
+          {update.status === 'downloading' && (
+            <div className="meter" style={{ margin: '10px 0' }}>
+              <span className="bar" style={{ width: '100%' }}>
+                <div style={{ width: (update.percent || 0) + '%' }} />
+              </span>
+              {update.percent || 0}%
+            </div>
+          )}
+          {update.status === 'ready' && (
+            <p>
+              The update has downloaded. Pal Pal will close, install it and reopen.{busy ? ' A chat is still running and will be stopped.' : ''}
+            </p>
+          )}
+          <div className="row" style={{ justifyContent: 'flex-end', marginTop: 12 }}>
+            {update.status !== 'downloading' && <button onClick={onLater}>Later</button>}
+            {update.status === 'available' && (
+              <button className="primary" onClick={() => void api('update:download')}>
+                Update now
+              </button>
+            )}
+            {update.status === 'downloading' && <button disabled>Downloading…</button>}
+            {update.status === 'ready' && (
+              <button className="primary" onClick={() => void api('update:install')}>
+                Restart and install
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

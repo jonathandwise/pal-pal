@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import type { HardwareProfile, McpServerConfig, ModelInfo, OllamaOverrides, Settings } from '../../shared/types';
+import type { HardwareProfile, McpServerConfig, ModelInfo, OllamaOverrides, Settings, UpdateState } from '../../shared/types';
 import { DEFAULT_SYSTEM_PROMPT } from '../../shared/types';
 import { api } from './api';
 
@@ -60,8 +60,16 @@ function General(p: P) {
   const [hasKey, setHasKey] = useState(false);
   const [msg, setMsg] = useState<{ ok: boolean; message: string } | null>(null);
   const [busy, setBusy] = useState(false);
+  const [up, setUp] = useState<UpdateState | null>(null);
+  const [checking, setChecking] = useState(false);
+  const check = async () => {
+    setChecking(true);
+    setUp(await api('update:check').catch((e) => ({ status: 'error', current: up?.current || '', error: e.message })));
+    setChecking(false);
+  };
   useEffect(() => {
     void api('key:status').then((s) => setHasKey(s.set));
+    void api('app:info').then((i) => setUp({ ...i.update, current: i.version }));
   }, []);
   const saveKey = async (value: string) => {
     setBusy(true);
@@ -108,6 +116,26 @@ function General(p: P) {
           <button onClick={p.pickFolder}>{p.settings.workFolder ? 'Switch…' : 'Choose…'}</button>
         </div>
         <div className="hint">The AI can only read and change files inside this folder unless you turn on outside access for a chat.</div>
+      </div>
+      <div className="field">
+        <label>Version</label>
+        <div className="row">
+          <span>Pal Pal {up?.current ? 'v' + up.current : ''}</span>
+          <button disabled={checking} onClick={check}>
+            {checking ? 'Checking…' : 'Check for updates'}
+          </button>
+        </div>
+        {up && up.status !== 'idle' && (
+          <div className="hint" style={{ color: up.status === 'error' ? 'var(--warn)' : up.status === 'available' ? 'var(--ok)' : undefined }}>
+            {up.status === 'none' && 'You have the latest version.'}
+            {up.status === 'available' && 'Version ' + up.latest + ' is available. Close Settings to update.'}
+            {up.status === 'checking' && 'Checking…'}
+            {up.status === 'downloading' && 'Downloading the update…'}
+            {up.status === 'ready' && 'The update is downloaded. Close Settings to install it.'}
+            {up.status === 'error' && up.error}
+          </div>
+        )}
+        <div className="hint">Pal Pal checks its GitHub releases each time it starts and asks before updating.</div>
       </div>
       <div className="field">
         <label>Theme</label>

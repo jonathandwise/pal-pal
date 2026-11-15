@@ -190,7 +190,18 @@ export type AgentEvent =
   | { type: 'memory-proposal'; chatId: string; id: string; fact: string }
   | { type: 'chat-updated'; chatId: string }
   | { type: 'usage'; chatId: string; used: number; limit: number }
-  | { type: 'done'; chatId: string };
+  | { type: 'done'; chatId: string }
+  | { type: 'update'; chatId: ''; state: UpdateState };
+
+export interface UpdateState {
+  status: 'idle' | 'checking' | 'available' | 'none' | 'downloading' | 'ready' | 'error';
+  /** installed version */
+  current: string;
+  latest?: string;
+  notes?: string;
+  percent?: number;
+  error?: string;
+}
 
 export const DEFAULT_SYSTEM_PROMPT = `You are a capable local AI assistant running inside Pal Pal, a desktop app on the user's Windows PC.
 

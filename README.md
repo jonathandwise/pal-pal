@@ -9,7 +9,7 @@ packaged with electron-builder (NSIS installer). No native modules, no Rust/MSVC
 
 ## Install on a PC
 
-1. Copy `release\Pal Pal Setup 1.0.0.exe` to the PC and run it.
+1. Copy `release\Pal-Pal-Setup-1.1.0.exe` to the PC and run it.
    The installer is **not code-signed**, so Windows SmartScreen shows "Windows protected your PC" -
    choose *More info → Run anyway*.
 2. Install [Ollama](https://ollama.com) and pull at least one model, e.g. `ollama pull qwen3:8b`.
@@ -33,6 +33,37 @@ npm run typecheck
 npm run build      # compile to out/
 npm run dist       # build + create the installer in release/
 ```
+
+## Versions and updates
+
+The version lives in `package.json` (`version`) and is shown in the sidebar header and in
+*Settings → General*. A few seconds after it starts, the installed app asks GitHub for the latest
+release of `jonathandwise/pal-pal`. If that release is newer, it asks whether to update; on
+*Update now* it downloads the installer, checks it against the SHA-512 in `latest.yml`, then closes,
+installs and reopens. *Later* hides the prompt until the next start. Nothing downloads without a
+yes. *Settings → General → Check for updates* runs the same check on demand and shows any error.
+
+Requirements for the check to find anything:
+
+- The GitHub repository must be **public**. A private repository answers 404 to the app.
+- A published (non-draft, non-prerelease) release must have three files attached:
+  the installer, its `.blockmap`, and `latest.yml`.
+
+To publish a new version:
+
+```bash
+npm version patch
+```
+
+```bash
+npm run dist
+```
+
+```bash
+gh release create v1.1.1 release/Pal-Pal-Setup-1.1.1.exe release/Pal-Pal-Setup-1.1.1.exe.blockmap release/latest.yml --title "Pal Pal 1.1.1" --notes "What changed"
+```
+
+Use the version `npm version` printed in place of `1.1.1`. Update checks do not run in `npm run dev`.
 
 ## Effort mapping
 
@@ -160,6 +191,8 @@ src/renderer/           React UI
 ## Known gaps
 
 - The installer is unsigned and uses the default Electron icon.
+- Update checks only work while the GitHub repository is public and has a published release with
+  `latest.yml` attached.
 - Shell-command screening is heuristic, and shell changes cannot be rolled back (see above).
 - Secrets are in a DPAPI-encrypted file, not in Windows Credential Manager itself.
 - Token counts are estimates until the provider reports real counts after the first reply.
