@@ -190,7 +190,7 @@ src/renderer/           React UI
 
 ## Known gaps
 
-- The installer is unsigned and uses the default Electron icon.
+- The installer is unsigned.
 - Update checks only work while the GitHub repository is public and has a published release with
   `latest.yml` attached.
 - Shell-command screening is heuristic, and shell changes cannot be rolled back (see above).

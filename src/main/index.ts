@@ -177,6 +177,7 @@ function createWindow(): void {
     backgroundColor: '#15171c',
     autoHideMenuBar: true,
     title: 'Pal Pal',
+    icon: path.join(__dirname, '../../resources/icon.png'),
     webPreferences: { preload: path.join(__dirname, '../preload/index.js'), contextIsolation: true, nodeIntegration: false, sandbox: true },
   });
   win.webContents.setWindowOpenHandler(({ url }) => {

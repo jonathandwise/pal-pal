@@ -1,7 +1,7 @@
 {
   "name": "pal-pal",
   "productName": "Pal Pal",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Pal Pal - a local-first desktop AI agent for Ollama and OpenRouter",
   "author": "Pal Pal",
   "license": "MIT",
@@ -48,6 +48,7 @@
     },
     "files": [
       "out/**/*",
+      "resources/icon.png",
       "package.json"
     ],
     "win": {
@@ -58,7 +59,8 @@
             "x64"
           ]
         }
-      ]
+      ],
+      "icon": "build/icon.ico"
     },
     "nsis": {
       "oneClick": false,
@@ -66,7 +68,9 @@
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "shortcutName": "Pal Pal",
-      "artifactName": "Pal-Pal-Setup-${version}.${ext}"
+      "artifactName": "Pal-Pal-Setup-${version}.${ext}",
+      "installerIcon": "build/icon.ico",
+      "uninstallerIcon": "build/icon.ico"
     },
     "publish": [
       {

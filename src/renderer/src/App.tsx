@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { AgentEvent, ApprovalRequest, Chat, ModelInfo, Msg, Settings, Topic, UpdateState } from '../../shared/types';
 import { api, onEvent } from './api';
+import logo from './assets/icon.png';
 import { ChatView } from './Chat';
 import { ContextPanel, LogPanel } from './Panels';
 import { SettingsModal } from './Settings';
@@ -238,6 +239,7 @@ export function App() {
           />
         ) : (
           <div className="empty">
+            <img src={logo} alt="" width={96} height={96} />
             <h2 style={{ margin: 0, color: 'var(--text)' }}>Pal Pal</h2>
             <div>Start a chat to talk to a local Ollama model or an OpenRouter model.</div>
             <button className="primary" onClick={() => newChat(null)}>
@@ -430,6 +432,7 @@ function Sidebar(p: {
     <div className="sidebar">
       <div className="head">
         <div className="row">
+          <img src={logo} alt="" width={26} height={26} />
           <strong>Pal Pal</strong>
           <span className="grow muted small" title="Installed version">
             {p.version ? 'v' + p.version : ''}
@@ -576,7 +579,9 @@ function UpdatePrompt({ update, onLater, busy }: { update: UpdateState; onLater:
   return (
     <div className="overlay">
       <div className="modal smallm">
-        <div className="mhead">A new version of Pal Pal is available</div>
+        <div className="mhead">
+          <img src={logo} alt="" width={28} height={28} style={{ marginRight: 8 }} />A new version of Pal Pal is available
+        </div>
         <div className="pane">
           <p style={{ marginTop: 0 }}>
             Version <b>{update.latest}</b> is available. You have version <b>{update.current}</b>. Would you like to update now?
