@@ -170,7 +170,7 @@ function createWindow(): void {
     minHeight: 560,
     backgroundColor: '#15171c',
     autoHideMenuBar: true,
-    title: 'Local AI Harness',
+    title: 'Pal Pal',
     webPreferences: { preload: path.join(__dirname, '../preload/index.js'), contextIsolation: true, nodeIntegration: false, sandbox: true },
   });
   win.webContents.setWindowOpenHandler(({ url }) => {

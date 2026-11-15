@@ -518,7 +518,7 @@ export function ChatView(p: {
             )}
           </div>
           {visionWarn && <div className="inline-warn">⚠ {model!.name} cannot take images. Pick a model marked 👁, or the image will not be sent.</div>}
-          {noToolsNative && <div className="inline-warn">⚠ {model!.name} has no native tool calling; the harness falls back to text-based tool calls (less reliable). Untick Tools for plain chat.</div>}
+          {noToolsNative && <div className="inline-warn">⚠ {model!.name} has no native tool calling; Pal Pal falls back to text-based tool calls (less reliable). Untick Tools for plain chat.</div>}
           {hw?.defaults?.warning && <div className="inline-warn">⚠ {hw.defaults.warning}</div>}
           {hw && !hw.defaults.warning && (
             <div className="muted small" style={{ marginTop: 5 }}>

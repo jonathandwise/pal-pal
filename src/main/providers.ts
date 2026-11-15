@@ -3,7 +3,7 @@ import type { Effort, ModelInfo, OllamaOverrides } from '../shared/types';
 import type { RawCall, ToolDef } from './toolcalls';
 import { getSecret, getSettings } from './store';
 
-export class HarnessError extends Error {
+export class PalPalError extends Error {
   constructor(message: string, public code: 'no-tools' | 'no-think' | 'auth' | 'offline' | 'missing-model' | 'aborted' | 'other' = 'other') {
     super(message);
   }
@@ -80,9 +80,9 @@ async function safeFetch(url: string, init: RequestInit, who: 'Ollama' | 'OpenRo
   try {
     return await fetch(url, init);
   } catch (e: any) {
-    if (init.signal?.aborted) throw new HarnessError('Stopped.', 'aborted');
-    if (who === 'Ollama') throw new HarnessError(`Cannot reach Ollama at ${ollamaUrl()}. Is Ollama running? Start it (or fix the URL in Settings) and try again.`, 'offline');
-    throw new HarnessError(`Network error reaching OpenRouter (${e?.cause?.code || e?.message || 'fetch failed'}). Check your internet connection.`, 'offline');
+    if (init.signal?.aborted) throw new PalPalError('Stopped.', 'aborted');
+    if (who === 'Ollama') throw new PalPalError(`Cannot reach Ollama at ${ollamaUrl()}. Is Ollama running? Start it (or fix the URL in Settings) and try again.`, 'offline');
+    throw new PalPalError(`Network error reaching OpenRouter (${e?.cause?.code || e?.message || 'fetch failed'}). Check your internet connection.`, 'offline');
   }
 }
 
@@ -104,8 +104,8 @@ async function* lines(res: Response, signal: AbortSignal): AsyncGenerator<string
     }
     if (buf.trim()) yield buf.trim();
   } catch (e: any) {
-    if (signal.aborted) throw new HarnessError('Stopped.', 'aborted');
-    throw new HarnessError(`Connection lost while streaming (${e?.message || e}).`, 'offline');
+    if (signal.aborted) throw new PalPalError('Stopped.', 'aborted');
+    throw new PalPalError(`Connection lost while streaming (${e?.message || e}).`, 'offline');
   }
 }
 
@@ -116,7 +116,7 @@ const showCache = new Map<string, any>();
 
 export async function listOllamaModels(): Promise<ModelInfo[]> {
   const res = await safeFetch(ollamaUrl() + '/api/tags', { signal: AbortSignal.timeout(5000) }, 'Ollama');
-  if (!res.ok) throw new HarnessError(`Ollama returned HTTP ${res.status} when listing models.`);
+  if (!res.ok) throw new PalPalError(`Ollama returned HTTP ${res.status} when listing models.`);
   const tags = ((await res.json()) as any).models || [];
   const out = await Promise.all(
     tags.map(async (t: any): Promise<ModelInfo | null> => {
@@ -216,10 +216,10 @@ async function chatOllama(o: ChatOpts): Promise<ChatResult> {
     } catch {
       /* ignore */
     }
-    if (/does not support tools/i.test(msg)) throw new HarnessError(msg, 'no-tools');
-    if (/does not support thinking/i.test(msg)) throw new HarnessError(msg, 'no-think');
-    if (res.status === 404 || /not found/i.test(msg)) throw new HarnessError(`Model "${o.model.id}" is not installed in Ollama. Run:  ollama pull ${o.model.id}`, 'missing-model');
-    throw new HarnessError(`Ollama error (HTTP ${res.status}): ${msg || res.statusText}`);
+    if (/does not support tools/i.test(msg)) throw new PalPalError(msg, 'no-tools');
+    if (/does not support thinking/i.test(msg)) throw new PalPalError(msg, 'no-think');
+    if (res.status === 404 || /not found/i.test(msg)) throw new PalPalError(`Model "${o.model.id}" is not installed in Ollama. Run:  ollama pull ${o.model.id}`, 'missing-model');
+    throw new PalPalError(`Ollama error (HTTP ${res.status}): ${msg || res.statusText}`);
   }
   const out: ChatResult = { content: '', thinking: '', toolCalls: [], usage: {} };
   for await (const line of lines(res, o.signal)) {
@@ -229,7 +229,7 @@ async function chatOllama(o: ChatOpts): Promise<ChatResult> {
     } catch {
       continue;
     }
-    if (j.error) throw new HarnessError(`Ollama error: ${j.error}`);
+    if (j.error) throw new PalPalError(`Ollama error: ${j.error}`);
     const m = j.message || {};
     if (m.thinking) {
       out.thinking += m.thinking;
@@ -251,14 +251,14 @@ async function chatOllama(o: ChatOpts): Promise<ChatResult> {
 // ------------------------------------------------------------------------------------------ OpenRouter
 function orHeaders(): Record<string, string> {
   const key = getSecret('openrouterKey');
-  if (!key) throw new HarnessError('No OpenRouter API key is set. Add one in Settings.', 'auth');
-  return { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json', 'HTTP-Referer': 'https://localhost/local-ai-harness', 'X-Title': 'Local AI Harness' };
+  if (!key) throw new PalPalError('No OpenRouter API key is set. Add one in Settings.', 'auth');
+  return { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json', 'HTTP-Referer': 'https://localhost/pal-pal', 'X-Title': 'Pal Pal' };
 }
 
 export async function listOpenRouterModels(): Promise<ModelInfo[]> {
   if (!getSecret('openrouterKey')) return [];
   const res = await safeFetch(OR + '/models', { headers: orHeaders(), signal: AbortSignal.timeout(15000) }, 'OpenRouter');
-  if (!res.ok) throw new HarnessError(`OpenRouter returned HTTP ${res.status} when listing models.`);
+  if (!res.ok) throw new PalPalError(`OpenRouter returned HTTP ${res.status} when listing models.`);
   const data = ((await res.json()) as any).data || [];
   return data
     .map((m: any): ModelInfo => {
@@ -316,12 +316,12 @@ async function chatOpenRouter(o: ChatOpts): Promise<ChatResult> {
     } catch {
       /* ignore */
     }
-    if (res.status === 401) throw new HarnessError('OpenRouter rejected the API key (401). Check the key in Settings.', 'auth');
-    if (res.status === 402) throw new HarnessError(`OpenRouter: insufficient credits. ${msg}`, 'auth');
-    if (res.status === 429) throw new HarnessError(`OpenRouter rate limit reached. ${msg}`);
-    if (/tool use|support tools|tool calling/i.test(msg)) throw new HarnessError(msg, 'no-tools');
-    if (/reasoning/i.test(msg) && res.status === 400) throw new HarnessError(msg, 'no-think');
-    throw new HarnessError(`OpenRouter error (HTTP ${res.status}): ${msg || res.statusText}`);
+    if (res.status === 401) throw new PalPalError('OpenRouter rejected the API key (401). Check the key in Settings.', 'auth');
+    if (res.status === 402) throw new PalPalError(`OpenRouter: insufficient credits. ${msg}`, 'auth');
+    if (res.status === 429) throw new PalPalError(`OpenRouter rate limit reached. ${msg}`);
+    if (/tool use|support tools|tool calling/i.test(msg)) throw new PalPalError(msg, 'no-tools');
+    if (/reasoning/i.test(msg) && res.status === 400) throw new PalPalError(msg, 'no-think');
+    throw new PalPalError(`OpenRouter error (HTTP ${res.status}): ${msg || res.statusText}`);
   }
   const out: ChatResult = { content: '', thinking: '', toolCalls: [], usage: {} };
   const partial: { id?: string; name: string; args: string }[] = [];
@@ -335,7 +335,7 @@ async function chatOpenRouter(o: ChatOpts): Promise<ChatResult> {
     } catch {
       continue;
     }
-    if (j.error) throw new HarnessError(`OpenRouter error: ${j.error.message || JSON.stringify(j.error)}`);
+    if (j.error) throw new PalPalError(`OpenRouter error: ${j.error.message || JSON.stringify(j.error)}`);
     if (j.usage) out.usage = { prompt: j.usage.prompt_tokens, completion: j.usage.completion_tokens };
     const ch = j.choices?.[0];
     if (!ch) continue;

@@ -1,9 +1,9 @@
 {
-  "name": "local-ai-harness",
-  "productName": "Local AI Harness",
+  "name": "pal-pal",
+  "productName": "Pal Pal",
   "version": "1.0.0",
-  "description": "Local-first desktop AI agent harness for Ollama and OpenRouter",
-  "author": "Local AI Harness",
+  "description": "Pal Pal - a local-first desktop AI agent for Ollama and OpenRouter",
+  "author": "Pal Pal",
   "license": "MIT",
   "private": true,
   "main": "out/main/index.js",
@@ -40,8 +40,8 @@
     "vitest": "^5.1.0"
   },
   "build": {
-    "appId": "local.ai.harness",
-    "productName": "Local AI Harness",
+    "appId": "com.palpal.app",
+    "productName": "Pal Pal",
     "directories": { "output": "release" },
     "files": ["out/**/*", "package.json"],
     "win": { "target": [{ "target": "nsis", "arch": ["x64"] }] },
@@ -50,7 +50,7 @@
       "perMachine": false,
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
-      "shortcutName": "Local AI Harness"
+      "shortcutName": "Pal Pal"
     }
   }
 }

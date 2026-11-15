@@ -13,7 +13,7 @@ let outsideDir: string;
 let canSymlinkFile = true;
 
 beforeAll(() => {
-  base = fs.realpathSync.native(fs.mkdtempSync(path.join(os.tmpdir(), 'harness-guard-')));
+  base = fs.realpathSync.native(fs.mkdtempSync(path.join(os.tmpdir(), 'palpal-guard-')));
   root = path.join(base, 'work');
   outsideDir = path.join(base, 'outside');
   fs.mkdirSync(path.join(root, 'sub'), { recursive: true });

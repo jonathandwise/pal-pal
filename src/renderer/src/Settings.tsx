@@ -138,7 +138,7 @@ function Prompt(p: P) {
         >
           Reset to default
         </button>
-        <span className="muted small">~{Math.ceil(text.length / 3.6)} tokens. The harness appends the date, work folder, checked context and tool instructions.</span>
+        <span className="muted small">~{Math.ceil(text.length / 3.6)} tokens. Pal Pal appends the date, work folder, checked context and tool instructions.</span>
       </div>
     </div>
   );

@@ -2,7 +2,7 @@
 import type { AgentEvent, ApprovalRequest, Chat, ModelInfo, Msg, OutsideAccess, ToolCall } from '../shared/types';
 import * as store from './store';
 import { buildRequest, estimateTokens } from './context';
-import { effectiveCtx, HarnessError, streamChat, type ChatResult } from './providers';
+import { effectiveCtx, PalPalError, streamChat, type ChatResult } from './providers';
 import { parseTextToolCalls, ToolValidator, newCallId, type RawCall, type ToolDef, type Validation } from './toolcalls';
 import { builtinTools, isBuiltin, runBuiltin, type ToolResult } from './tools';
 import { callMcp, isMcpTool, mcpTools } from './mcp';
@@ -54,7 +54,7 @@ function truncateOutput(text: string, max: number): string {
   if (text.length <= max) return text;
   const head = Math.floor(max * 0.7);
   const tail = max - head;
-  return `${text.slice(0, head)}\n\n… [output truncated by the harness: ${text.length - max} of ${text.length} characters omitted] …\n\n${text.slice(-tail)}`;
+  return `${text.slice(0, head)}\n\n… [output truncated by Pal Pal: ${text.length - max} of ${text.length} characters omitted] …\n\n${text.slice(-tail)}`;
 }
 
 /** Pull <think>…</think> blocks that some models put in the content into the thinking channel. */
@@ -189,8 +189,8 @@ export async function sendMessage(chatId: string, text: string, images: string[]
     await runTurn(chat, model, turn, run);
   } catch (e: any) {
     if (e?.code !== 'aborted' && !run.abort.signal.aborted) {
-      store.log(chatId, 'error', { message: e?.message, stack: e instanceof HarnessError ? undefined : e?.stack });
-      note(chatId, turn, 'error', e instanceof HarnessError ? e.message : `Unexpected error: ${e?.message || e}`);
+      store.log(chatId, 'error', { message: e?.message, stack: e instanceof PalPalError ? undefined : e?.stack });
+      note(chatId, turn, 'error', e instanceof PalPalError ? e.message : `Unexpected error: ${e?.message || e}`);
     }
   } finally {
     if (run.abort.signal.aborted) note(chatId, turn, 'info', 'Stopped.');
@@ -215,7 +215,7 @@ async function runTurn(chat: Chat, model: ModelInfo, turn: number, run: Run): Pr
   const { ctx, overrides } = await modelCtx(chat, model);
 
   if (textMode && !store.listMessages(chatId).some((m) => m.kind === 'text-tools')) {
-    note(chatId, turn, 'text-tools', `${model.name} has no native tool calling. The harness will describe the tools in the prompt and parse tool calls from the model's text, which is less reliable. If it struggles, switch **Tools** off next to the message box to chat without tools.`);
+    note(chatId, turn, 'text-tools', `${model.name} has no native tool calling. Pal Pal will describe the tools in the prompt and parse tool calls from the model's text, which is less reliable. If it struggles, switch **Tools** off next to the message box to chat without tools.`);
   }
 
   for (let step = 1; ; step++) {
@@ -338,7 +338,7 @@ async function runTurn(chat: Chat, model: ModelInfo, turn: number, run: Run): Pr
       } catch (e: any) {
         result = { content: `Error: tool crashed: ${e?.message || e}`, isError: true };
       }
-      if (v.repairs.length) result = { ...result, content: `[harness note: ${v.repairs.join('; ')}]\n${result.content}` };
+      if (v.repairs.length) result = { ...result, content: `[Pal Pal note: ${v.repairs.join('; ')}]\n${result.content}` };
       store.log(chatId, 'tool-exec', { step, name: v.call.name, args: v.call.args, ms: Date.now() - t1 });
       emit({ type: 'status', chatId, text: '' });
       if (signal.aborted && !result.content) return;

@@ -1,4 +1,4 @@
-# Local AI Harness
+# Pal Pal
 
 A local-first desktop AI agent for Windows 10/11. It talks to **Ollama** (local models) and
 **OpenRouter**, gives the model file, shell, web and MCP tools, and keeps those tools inside one
@@ -9,7 +9,7 @@ packaged with electron-builder (NSIS installer). No native modules, no Rust/MSVC
 
 ## Install on a PC
 
-1. Copy `release\Local AI Harness Setup 1.0.0.exe` to the PC and run it.
+1. Copy `release\Pal Pal Setup 1.0.0.exe` to the PC and run it.
    The installer is **not code-signed**, so Windows SmartScreen shows "Windows protected your PC" -
    choose *More info → Run anyway*.
 2. Install [Ollama](https://ollama.com) and pull at least one model, e.g. `ollama pull qwen3:8b`.
@@ -17,8 +17,8 @@ packaged with electron-builder (NSIS installer). No native modules, no Rust/MSVC
    pick a model next to the message box, and chat.
 4. Optional: add an OpenRouter key in *Settings → General*.
 
-Everything is stored per PC in `%APPDATA%\Local AI Harness\`:
-`harness.db` (chats, topics, settings), `memory.md`, `logs\<chat id>.jsonl`, `checkpoints\`,
+Everything is stored per PC in `%APPDATA%\Pal Pal\`:
+`palpal.db` (chats, topics, settings), `memory.md`, `logs\<chat id>.jsonl`, `checkpoints\`,
 `secrets.bin.json` (DPAPI-encrypted).
 
 ## Build from source
@@ -135,7 +135,7 @@ Enforced in code (`src/main/guard.ts`), not in the prompt:
 
 *View log* shows every step of a chat: the exact request (system prompt, context, history, tool
 definitions), raw model output, parsed tool calls and validation results, tool results, approvals,
-errors, token counts and timings. The same data is in `%APPDATA%\Local AI Harness\logs\<chat>.jsonl`
+errors, token counts and timings. The same data is in `%APPDATA%\Pal Pal\logs\<chat>.jsonl`
 (*Open file* / *Show in folder*). The OpenRouter key, `sk-…` strings and `Bearer` tokens are redacted
 before writing; pasted images are replaced by a size note.
 

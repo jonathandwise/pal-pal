@@ -229,7 +229,7 @@ export function App() {
           />
         ) : (
           <div className="empty">
-            <h2 style={{ margin: 0, color: 'var(--text)' }}>Local AI Harness</h2>
+            <h2 style={{ margin: 0, color: 'var(--text)' }}>Pal Pal</h2>
             <div>Start a chat to talk to a local Ollama model or an OpenRouter model.</div>
             <button className="primary" onClick={() => newChat(null)}>
               New chat
@@ -417,7 +417,7 @@ function Sidebar(p: {
     <div className="sidebar">
       <div className="head">
         <div className="row">
-          <strong className="grow">Local AI Harness</strong>
+          <strong className="grow">Pal Pal</strong>
           <button className="ghost" title="Settings" onClick={p.onSettings}>
             ⚙
           </button>

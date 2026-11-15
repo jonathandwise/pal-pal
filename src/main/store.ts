@@ -18,7 +18,7 @@ export const uid = () => randomUUID();
 
 export function initStore(): void {
   for (const d of [dataDir(), logsDir(), checkpointsDir()]) fs.mkdirSync(d, { recursive: true });
-  db = new DatabaseSync(path.join(dataDir(), 'harness.db'));
+  db = new DatabaseSync(path.join(dataDir(), 'palpal.db'));
   db.exec(`
     PRAGMA journal_mode = WAL;
     PRAGMA foreign_keys = ON;

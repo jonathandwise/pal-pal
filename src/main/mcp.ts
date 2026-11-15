@@ -31,7 +31,7 @@ async function connect(conn: Conn): Promise<void> {
   conn.error = undefined;
   let stderr = '';
   try {
-    const client = new Client({ name: 'local-ai-harness', version: '1.0.0' });
+    const client = new Client({ name: 'pal-pal', version: '1.0.0' });
     if (c.type === 'stdio') {
       if (!c.command) throw new Error('No command configured');
       const transport = new StdioClientTransport({ command: c.command, args: c.args || [], env: { ...getDefaultEnvironment(), ...(c.env || {}) }, stderr: 'pipe' });
