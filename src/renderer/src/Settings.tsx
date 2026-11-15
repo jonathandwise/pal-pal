@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { HardwareProfile, McpServerConfig, ModelInfo, OllamaOverrides, Settings, UpdateState } from '../../shared/types';
-import { DEFAULT_SYSTEM_PROMPT } from '../../shared/types';
+import { DEFAULT_SYSTEM_PROMPT, FONT_MAX, FONT_MIN } from '../../shared/types';
 import { api } from './api';
 
 type Tab = 'general' | 'prompt' | 'memory' | 'agent' | 'hardware' | 'mcp';
@@ -136,6 +136,25 @@ function General(p: P) {
           </div>
         )}
         <div className="hint">Pal Pal checks its GitHub releases each time it starts and asks before updating.</div>
+      </div>
+      <div className="field">
+        <label>Chat text size</label>
+        <div className="row">
+          <button disabled={p.settings.fontSize <= FONT_MIN} onClick={() => p.save({ fontSize: p.settings.fontSize - 1 })}>
+            A−
+          </button>
+          <input type="range" min={FONT_MIN} max={FONT_MAX} step={1} value={p.settings.fontSize} onChange={(e) => p.save({ fontSize: Number(e.target.value) })} />
+          <button disabled={p.settings.fontSize >= FONT_MAX} onClick={() => p.save({ fontSize: p.settings.fontSize + 1 })}>
+            A+
+          </button>
+          <span>{p.settings.fontSize}px</span>
+          {p.settings.fontSize !== 14 && (
+            <button className="ghost" onClick={() => p.save({ fontSize: 14 })}>
+              Reset
+            </button>
+          )}
+        </div>
+        <div className="hint">Scales the messages and the message box. Also on the A− / A+ buttons above the chat, and Ctrl + / Ctrl − / Ctrl 0.</div>
       </div>
       <div className="field">
         <label>Theme</label>

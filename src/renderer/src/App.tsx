@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { FONT_MAX, FONT_MIN } from '../../shared/types';
 import type { AgentEvent, ApprovalRequest, Chat, ModelInfo, Msg, Settings, Topic, UpdateState } from '../../shared/types';
 import { api, onEvent } from './api';
 import logo from './assets/icon.png';
@@ -188,6 +189,26 @@ export function App() {
     }
   };
 
+  // Ctrl + / Ctrl - / Ctrl 0 change the chat text size
+  const sizeRef = useRef(14);
+  sizeRef.current = settings?.fontSize ?? 14;
+  const saveRef = useRef(saveSettings);
+  saveRef.current = saveSettings;
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (!e.ctrlKey || e.altKey) return;
+      let next: number | null = null;
+      if (e.key === '=' || e.key === '+') next = Math.min(FONT_MAX, sizeRef.current + 1);
+      else if (e.key === '-' || e.key === '_') next = Math.max(FONT_MIN, sizeRef.current - 1);
+      else if (e.key === '0') next = 14;
+      if (next === null) return;
+      e.preventDefault();
+      if (next !== sizeRef.current) void saveRef.current({ fontSize: next });
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+
   if (!settings) return <div className="empty">Loading…</div>;
   const chat = chats.find((c) => c.id === activeId) || null;
 
@@ -235,6 +256,7 @@ export function App() {
               void refreshUsage(chat.id);
             }}
             refreshModels={loadModels}
+            saveSettings={saveSettings}
             toast={toast}
           />
         ) : (

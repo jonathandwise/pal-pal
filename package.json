@@ -1,7 +1,7 @@
 {
   "name": "pal-pal",
   "productName": "Pal Pal",
-  "version": "1.1.1",
+  "version": "1.2.0",
   "description": "Pal Pal - a local-first desktop AI agent for Ollama and OpenRouter",
   "author": "Pal Pal",
   "license": "MIT",

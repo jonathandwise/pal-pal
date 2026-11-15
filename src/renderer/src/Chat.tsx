@@ -3,7 +3,8 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeHighlight from 'rehype-highlight';
 import type { ApprovalMode, ApprovalRequest, Chat, Checkpoint, Effort, ModelInfo, Msg, OutsideAccess, Settings, ToolCall } from '../../shared/types';
-import { api, fmtTokens } from './api';
+import { FONT_MAX, FONT_MIN } from '../../shared/types';
+import { api, fmtTokens, modelKey } from './api';
 
 function Pre(props: any) {
   const ref = useRef<HTMLPreElement>(null);
@@ -168,18 +169,21 @@ function ApprovalCard({ a, chatId }: { a: ApprovalRequest; chatId: string }) {
   );
 }
 
-function ModelPicker({ chat, models, errors, update, refresh }: { chat: Chat; models: ModelInfo[]; errors: Record<string, string>; update: (p: Partial<Chat>) => void; refresh: () => Promise<void> }) {
+function ModelPicker({ chat, models, errors, favorites, toggleFavorite, update, refresh }: { chat: Chat; models: ModelInfo[]; errors: Record<string, string>; favorites: string[]; toggleFavorite: (key: string) => void; update: (p: Partial<Chat>) => void; refresh: () => Promise<void> }) {
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState('');
   const cur = models.find((m) => m.provider === chat.provider && m.id === chat.model);
+  const favSet = useMemo(() => new Set(favorites), [favorites]);
   const groups = useMemo(() => {
     const f = q.trim().toLowerCase();
     const match = (m: ModelInfo) => !f || m.name.toLowerCase().includes(f) || m.id.toLowerCase().includes(f);
     return [
+      { key: 'favorites', label: '★ Favorites', items: models.filter((m) => favSet.has(modelKey(m.provider, m.id)) && match(m)) },
       { key: 'ollama', label: 'Ollama (local)', items: models.filter((m) => m.provider === 'ollama' && match(m)) },
       { key: 'openrouter', label: 'OpenRouter', items: models.filter((m) => m.provider === 'openrouter' && match(m)) },
     ];
-  }, [models, q]);
+  }, [models, q, favSet]);
+  const missingFavs = favorites.filter((k) => !models.some((m) => modelKey(m.provider, m.id) === k));
   return (
     <span className="pop-wrap">
       <button onClick={() => (setOpen(!open), setQ(''))} title="Model" style={{ maxWidth: 260 }} className="ellipsis">
@@ -201,27 +205,53 @@ function ModelPicker({ chat, models, errors, update, refresh }: { chat: Chat; mo
                   <div className="group">
                     {g.label} ({g.items.length})
                   </div>
-                  {errors[g.key] && <div className="small" style={{ color: 'var(--warn)', padding: '0 8px 4px' }}>{errors[g.key]}</div>}
-                  {g.items.slice(0, 400).map((m) => (
-                    <div
-                      key={m.id}
-                      className={'item' + (cur === m ? ' sel' : '')}
-                      onClick={() => {
-                        update({ model: m.id, provider: m.provider });
-                        setOpen(false);
-                      }}
-                    >
-                      <span className="grow ellipsis" title={m.id}>
-                        {m.name}
-                      </span>
-                      {m.paramSize && <span className="tag">{m.paramSize}</span>}
-                      {m.quant && <span className="tag">{m.quant}</span>}
-                      <span className="tag">{fmtTokens(m.contextLength)}</span>
-                      {m.vision && <span className="tag" title="Accepts images">👁</span>}
-                      {m.tools && <span className="tag" title="Native tool calling">🔧</span>}
-                      {m.thinking && <span className="tag" title="Thinking / reasoning control">💭</span>}
+                  {g.key === 'favorites' && g.items.length === 0 && (
+                    <div className="small muted" style={{ padding: '0 8px 4px' }}>
+                      {favorites.length === 0 ? 'Click the ☆ next to a model to keep it here.' : q.trim() ? 'No favorites match the filter.' : 'Your favorites are not available right now.'}
                     </div>
-                  ))}
+                  )}
+                  {g.key === 'favorites' && missingFavs.length > 0 && !q.trim() && g.items.length > 0 && (
+                    <div className="small muted" style={{ padding: '0 8px 4px' }}>
+                      {missingFavs.length} favorite(s) not available right now.
+                    </div>
+                  )}
+                  {errors[g.key] && <div className="small" style={{ color: 'var(--warn)', padding: '0 8px 4px' }}>{errors[g.key]}</div>}
+                  {g.items.slice(0, 400).map((m) => {
+                    const key = modelKey(m.provider, m.id);
+                    const fav = favSet.has(key);
+                    return (
+                      <div
+                        key={g.key + key}
+                        className={'item' + (cur === m ? ' sel' : '')}
+                        onClick={() => {
+                          update({ model: m.id, provider: m.provider });
+                          setOpen(false);
+                        }}
+                      >
+                        <span
+                          className={'star' + (fav ? ' on' : '')}
+                          role="button"
+                          title={fav ? 'Remove from favorites' : 'Add to favorites'}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleFavorite(key);
+                          }}
+                        >
+                          {fav ? '★' : '☆'}
+                        </span>
+                        <span className="grow ellipsis" title={m.id}>
+                          {m.name}
+                        </span>
+                        {g.key === 'favorites' && <span className="tag">{m.provider === 'ollama' ? 'Ollama' : 'OpenRouter'}</span>}
+                        {m.paramSize && <span className="tag">{m.paramSize}</span>}
+                        {m.quant && <span className="tag">{m.quant}</span>}
+                        <span className="tag">{fmtTokens(m.contextLength)}</span>
+                        {m.vision && <span className="tag" title="Accepts images">👁</span>}
+                        {m.tools && <span className="tag" title="Native tool calling">🔧</span>}
+                        {m.thinking && <span className="tag" title="Thinking / reasoning control">💭</span>}
+                      </div>
+                    );
+                  })}
                 </div>
               ))}
             </div>
@@ -248,6 +278,7 @@ export function ChatView(p: {
   update: (patch: Partial<Chat>) => Promise<void>;
   reloadMessages: () => Promise<void>;
   refreshModels: () => Promise<void>;
+  saveSettings: (patch: Partial<Settings>) => Promise<void>;
   toast: (t: string, err?: boolean) => void;
 }) {
   const { chat } = p;
@@ -350,6 +381,14 @@ export function ChatView(p: {
           </span>
         )}
         {chat.approvalMode === 'full-auto' && <span className="badge err">Full auto</span>}
+        <span className="row" style={{ gap: 2 }} title={`Chat text size: ${p.settings.fontSize}px (Ctrl + / Ctrl - / Ctrl 0)`}>
+          <button className="ghost" disabled={p.settings.fontSize <= FONT_MIN} onClick={() => p.saveSettings({ fontSize: p.settings.fontSize - 1 })}>
+            A−
+          </button>
+          <button className="ghost" disabled={p.settings.fontSize >= FONT_MAX} onClick={() => p.saveSettings({ fontSize: p.settings.fontSize + 1 })}>
+            A+
+          </button>
+        </span>
         <button className={p.panel === 'context' ? 'primary' : ''} onClick={() => p.setPanel(p.panel === 'context' ? null : 'context')}>
           Context
         </button>
@@ -363,6 +402,7 @@ export function ChatView(p: {
 
       <div
         className="messages"
+        style={{ zoom: p.settings.fontSize / 14 }}
         ref={scroller}
         onScroll={(e) => {
           const el = e.currentTarget;
@@ -417,6 +457,7 @@ export function ChatView(p: {
           )}
           <textarea
             rows={2}
+            style={{ fontSize: p.settings.fontSize }}
             placeholder={model ? `Message ${model.name}…` : 'Select a model to start…'}
             value={text}
             onChange={(e) => {
@@ -439,7 +480,18 @@ export function ChatView(p: {
             }}
           />
           <div className="controls">
-            <ModelPicker chat={chat} models={p.models} errors={p.modelErrors} update={p.update} refresh={p.refreshModels} />
+            <ModelPicker
+              chat={chat}
+              models={p.models}
+              errors={p.modelErrors}
+              favorites={p.settings.favoriteModels}
+              toggleFavorite={(key) => {
+                const cur = p.settings.favoriteModels;
+                void p.saveSettings({ favoriteModels: cur.includes(key) ? cur.filter((k) => k !== key) : [...cur, key] });
+              }}
+              update={p.update}
+              refresh={p.refreshModels}
+            />
             <select title="Effort" value={chat.effort} onChange={(e) => p.update({ effort: e.target.value as Effort })}>
               <option value="low">Effort: Low</option>
               <option value="medium">Effort: Medium</option>

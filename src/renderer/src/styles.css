@@ -797,3 +797,20 @@ table.grid input {
   text-align: center;
   padding: 20px;
 }
+
+/* ---------- favourites */
+.pop .item .star {
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 1;
+  padding: 0 2px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.pop .item .star:hover {
+  color: var(--warn);
+  transform: scale(1.2);
+}
+.pop .item .star.on {
+  color: var(--warn);
+}

@@ -136,6 +136,10 @@ export interface Settings {
   lastProvider: Provider | '';
   lastEffort: Effort;
   lastApproval: ApprovalMode;
+  /** favourite models as "provider::id" */
+  favoriteModels: string[];
+  /** chat text size in px */
+  fontSize: number;
 }
 
 export interface ModelDefaults {
@@ -230,4 +234,9 @@ export const DEFAULT_SETTINGS: Settings = {
   lastProvider: '',
   lastEffort: 'medium',
   lastApproval: 'ask',
+  favoriteModels: [],
+  fontSize: 14,
 };
+
+export const FONT_MIN = 10;
+export const FONT_MAX = 26;
